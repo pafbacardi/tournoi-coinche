@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🏆 Classement Final du Tournoi de Coinche 🏆</title>
+  <link href="https://fonts.googleapis.com/css2?family=Metal+Mania&family=Bungee+Inline&family=Press+Start 2P&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --card-red: #C0392B;
+      --card-black: #2C3E50;
+      --card-gold: #F1C40F;
+      --background-dark: #1A1A1A;
+      --text-light: #ECF0F1;
+      --text-accent: #3498DB;
+      --outcome-win: #27AE60;
+      --outcome-loss: #E74C3C;
+      --outcome-draw: #BDC3C7;
+    }
+
+    body {
+      font-family: 'Arial', sans-serif;
+      background-color: var(--background-dark);
+      color: var(--text-light);
+      margin: 0;
+      overflow: hidden; 
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      cursor: pointer; 
+      background-image: 
+        url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="transparent"/><path d="M50 0 L100 50 L50 100 L0 50 Z" fill="%232C3E50" opacity="0.1"/><path d="M50 0 L100 50 L50 100 L0 50 Z" stroke="%2334495E" stroke-width="1" fill="none" opacity="0.2"/></svg>'),
+        url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><rect width="100" height="100" fill="transparent"/><path d="M50 0 L100 50 L50 100 L0 50 Z" fill="%23C0392B" opacity="0.05"/><path d="M50 0 L100 50 L50 100 L0 50 Z" stroke="%23E74C3C" stroke-width="1" fill="none" opacity="0.1"/></svg>');
+      background-size: 100px 100px, 150px 150px;
+      background-position: 0 0, 50px 50px;
+      animation: backgroundPan 60s linear infinite;
+    }
+
+    @keyframes backgroundPan {
+      from { background-position: 0 0, 50px 50px; }
+      to { background-position: 1000px 1000px, 1500px 1500px; }
+    }
+
+    h1 {
+      font-family: 'Metal Mania', cursive;
+      font-size: 4.5em;
+      color: var(--card-gold);
+      text-shadow: 
+        0 0 10px rgba(241, 196, 15, 0.8),
+        0 0 20px rgba(241, 196, 15, 0.6),
+        0 0 30px rgba(241, 196, 15, 0.4);
+      margin-bottom: 40px;
+      letter-spacing: 5px;
+      animation: pulseTitle 2s infinite alternate;
+    }
+
+    @keyframes pulseTitle {
+      from { transform: scale(1); }
+      to { transform: scale(1.02); }
+    }
+
+    #classement-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      width: 90%;
+      max-width: 800px;
+      min-height: 200px; 
+    }
+
+    .binome-card {
+      background-color: var(--card-black);
+      border: 5px solid var(--card-red);
+      border-radius: 15px;
+      padding: 25px 35px;
+      width: 100%;
+      max-width: 600px;
+      box-shadow: 
+        0 10px 20px rgba(0, 0, 0, 0.5),
+        inset 0 0 15px rgba(255, 255, 255, 0.2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      transform: scale(0.95);
+      opacity: 0;
+      transition: transform 0.5s cubic-bezier(0.68, -0.55, 0.27, 1.55), opacity 0.5s ease-out; 
+      box-sizing: border-box;
+    }
+
+    .binome-card.active {
+      transform: scale(1);
+      opacity: 1;
+    }
+
+    .binome-card::before {
+      content: '';
+      position: absolute;
+      top: -15px; left: -15px; right: -15px; bottom: -15px;
+      border: 5px solid var(--card-gold);
+      border-radius: 20px;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .card-rank {
+      font-family: 'Bungee Inline', cursive;
+      font-size: 3.5em;
+      color: var(--card-gold);
+      text-shadow: 3px 3px 5px rgba(0,0,0,0.8);
+      margin-bottom: 10px;
+    }
+
+    .card-name {
+      font-family: 'Bungee Inline', cursive;
+      font-size: 2.2em;
+      color: var(--text-accent);
+      margin-bottom: 10px;
+      letter-spacing: 1px;
+    }
+
+    /* Styles pour l'affichage des matchs */
+    .card-match-history {
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.9em; 
+      color: var(--text-light);
+      display: flex;
+      flex-direction: column;
+      gap: 8px; 
+      margin-top: 15px;
+      width: 100%; 
+    }
+
+    .card-match-item {
+        background-color: rgba(0,0,0,0.3);
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: 1px solid rgba(255,255,255,0.1);
+        display: flex;
+        justify-content: space-between; 
+        align-items: center;
+    }
+
+    .match-result-score {
+        font-weight: bold;
+        color: var(--card-gold); 
+    }
+    .match-adv-name {
+        color: var(--text-accent);
+        font-size: 0.9em;
+    }
+    
+    /* Styles pour V/D/N */
+    .match-outcome {
+        font-family: 'Bungee Inline', cursive; 
+        font-size: 1em; 
+        width: 25px; 
+        text-align: center;
+        margin-left: 10px;
+        flex-shrink: 0; 
+    }
+    /* Couleurs des résultats */
+    .match-outcome.win {
+        color: var(--outcome-win);
+    }
+    .match-outcome.loss {
+        color: var(--outcome-loss);
+    }
+    .match-outcome.draw {
+        color: var(--outcome-draw);
+    }
+
+
+    #podium-container {
+      display: none; 
+      width: 90%; 
+      max-width: 1400px; 
+      height: 700px; 
+      margin-top: 50px;
+      position: relative;
+      justify-content: center; 
+      align-items: flex-end;
+    }
+
+    #podium-container.active {
+      display: flex;
+    }
+
+    .podium-step {
+      background-color: var(--card-black);
+      border: 5px solid var(--card-red);
+      box-shadow: 0 15px 30px rgba(0,0,0,0.7), inset 0 0 20px rgba(255,255,255,0.3);
+      border-radius: 15px 15px 5px 5px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start; 
+      align-items: center;
+      padding: 20px 10px; 
+      position: absolute;
+      bottom: 0;
+      transition: all 1s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+      opacity: 0;
+      transform: translateY(100px); 
+      box-sizing: border-box; 
+    }
+
+    .podium-step.active {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Ajustements des tailles et positions des marches du podium */
+    .podium-step.pos-1 {
+      height: 650px; 
+      width: 350px; 
+      left: 50%;
+      margin-left: -175px; 
+      z-index: 3;
+      background-color: #2e524d; 
+      border-color: var(--card-gold);
+      padding-top: 70px; 
+    }
+    .podium-step.pos-2 {
+      height: 550px; 
+      width: 320px; 
+      left: 50%;
+      margin-left: -600px; 
+      z-index: 2;
+      background-color: #4a6a68;
+      border-color: #A9B0B7; 
+      padding-top: 60px;
+    }
+    .podium-step.pos-3 {
+      height: 450px; 
+      width: 300px; 
+      left: 50%;
+      margin-left: 300px; 
+      z-index: 1;
+      background-color: #4a6a68;
+      border-color: #BF7230; 
+      padding-top: 50px;
+    }
+
+    .podium-rank-label {
+      font-family: 'Metal Mania', cursive;
+      font-size: 3em; 
+      color: var(--card-gold);
+      text-shadow: 2px 2px 3px rgba(0,0,0,0.8);
+      margin-bottom: 10px;
+    }
+
+    .podium-name {
+      font-family: 'Bungee Inline', cursive;
+      font-size: 2em; 
+      color: var(--text-accent);
+      word-break: break-word; 
+      text-align: center;
+      margin-bottom: 20px; 
+    }
+    
+    .podium-details { 
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.65em; 
+      color: var(--text-light);
+      line-height: 1.1; 
+      text-align: center;
+      width: 100%;
+      max-height: none; 
+      overflow-y: visible; 
+      padding-bottom: 0px; 
+      box-sizing: border-box; 
+    }
+    .podium-details::-webkit-scrollbar {
+        width: 0px;
+        background: transparent;
+    }
+    .podium-details::-webkit-scrollbar-thumb {
+        background: transparent;
+    }
+
+
+    .podium-match-item {
+        background-color: rgba(0,0,0,0.2);
+        padding: 3px 6px; 
+        border-radius: 4px;
+        margin-bottom: 3px; 
+        font-size: 0.8em; 
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap; 
+    }
+    .podium-match-item span {
+        white-space: nowrap; 
+    }
+    .podium-match-outcome { 
+        font-family: 'Bungee Inline', cursive;
+        font-size: 0.8em; 
+        width: 20px; 
+        text-align: center;
+        margin-left: 5px;
+        flex-shrink: 0;
+    }
+    /* Couleurs des résultats pour le podium */
+    .podium-match-outcome.win {
+        color: var(--outcome-win);
+    }
+    .podium-match-outcome.loss {
+        color: var(--outcome-loss);
+    }
+    .podium-match-outcome.draw {
+        color: var(--outcome-draw);
+    }
+
+
+    /* Icônes pour le podium */
+    .podium-icon {
+      position: absolute;
+      top: -30px; 
+      width: 60px;
+      height: 60px;
+      font-size: 50px;
+      text-align: center;
+      line-height: 60px;
+      color: var(--card-gold);
+      text-shadow: 0 0 10px var(--card-gold);
+      transform: translateY(-50px) scale(0);
+      animation: iconPop 0.8s forwards 0.5s; 
+    }
+
+    @keyframes iconPop {
+      to { transform: translateY(0) scale(1); }
+    }
+
+    /* Style spécifique pour le 1er */
+    .podium-step.pos-1 .podium-name {
+      color: #FFFF00; 
+    }
+    .podium-step.pos-1 .podium-icon {
+      color: gold;
+    }
+    .podium-step.pos-2 .podium-icon {
+      color: silver;
+    }
+    .podium-step.pos-3 .podium-icon {
+      color: #cd7f32; 
+    }
+
+    #loading-message {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-family: 'Press Start 2P', cursive;
+        font-size: 1.5em;
+        color: var(--text-accent);
+        text-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+    }
+
+    #countdown-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.8);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 100;
+        opacity: 0;
+        pointer-events: none; 
+        transition: opacity 0.3s ease-out;
+    }
+
+    #countdown-overlay.active {
+        opacity: 1;
+        pointer-events: auto; 
+    }
+
+    #countdown-number {
+        font-family: 'Bungee Inline', cursive;
+        font-size: 15em; 
+        color: var(--card-gold);
+        text-shadow: 0 0 20px var(--card-gold), 0 0 40px var(--card-gold);
+        animation: countdownPop 0.8s ease-out forwards;
+    }
+
+    @keyframes countdownPop {
+        0% { transform: scale(0.5); opacity: 0; }
+        70% { transform: scale(1.1); opacity: 1; }
+        100% { transform: scale(1); opacity: 1; }
+    }
+
+    #backButton {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        padding: 10px 20px;
+        font-family: 'Press Start 2P', cursive;
+        background-color: #8B0000; /* Dark Red */
+        color: white;
+        border: 2px solid #FF4500; /* Orange Red */
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 1em;
+        z-index: 10;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        transition: background-color 0.3s, border-color 0.3s, transform 0.2s;
+        opacity: 0; /* Caché par défaut */
+        pointer-events: none; /* Inactif par défaut */
+    }
+
+    #backButton.active {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translateY(0);
+    }
+
+    #backButton:hover {
+        background-color: #FF4500;
+        border-color: #8B0000;
+        transform: translateY(-2px);
+    }
+
+  </style>
+</head>
+<body>
+  <div id="loading-message">Chargement du classement...</div>
+
+  <h1>CLASSEMENT FINAL</h1>
+
+  <div id="classement-container">
+    </div>
+
+  <div id="podium-container">
+    <div class="podium-step pos-2" id="podium-2">
+      <div class="podium-rank-label">2ème</div>
+      <div class="podium-icon">🥈</div>
+      <div class="podium-name"></div>
+      <div class="podium-details"></div>
+    </div>
+    <div class="podium-step pos-1" id="podium-1">
+      <div class="podium-rank-label">1er</div>
+      <div class="podium-icon">🥇</div>
+      <div class="podium-name"></div>
+      <div class="podium-details"></div>
+    </div>
+    <div class="podium-step pos-3" id="podium-3">
+      <div class="podium-rank-label">3ème</div>
+      <div class="podium-icon">🥉</div>
+      <div class="podium-name"></div>
+      <div class="podium-details"></div>
+    </div>
+  </div>
+
+  <div id="countdown-overlay">
+      <span id="countdown-number"></span>
+  </div>
+
+  <button id="backButton">Retour</button>
+
+  <script>
+    let classementComplet = [];
+    let currentIndex = 0;
+    let tourActuel = 1; 
+    const classementContainer = document.getElementById('classement-container');
+    const podiumContainer = document.getElementById('podium-container');
+    const loadingMessage = document.getElementById('loading-message');
+    const countdownOverlay = document.getElementById('countdown-overlay');
+    const countdownNumber = document.getElementById('countdown-number');
+    const backButton = document.getElementById('backButton');
+
+    let podiumState = 0; // 0: révélations individuelles, 1: 3ème affiché, 2: 1er affiché, 3: 2nd affiché (fin)
+    let isCountdownActive = false; 
+
+    // Pile pour l'historique des révélations (pour le bouton retour)
+    // 'revealed_X': X est le rang du binôme révélé (pour les non-podium)
+    // 'podium_3': Le 3ème est révélé
+    // 'countdown_started': Le compte à rebours a commencé
+    // 'podium_1': Le 1er est révélé
+    // 'podium_2': Le 2ème est révélé (fin de la séquence)
+    let revealedHistory = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadingMessage.style.display = 'block';
+      setTimeout(() => { 
+        chargerClassement();
+        loadingMessage.style.display = 'none';
+        if (classementComplet.length > 0) {
+          if (classementComplet.length <= 3) {
+            // Si 3 binômes ou moins, on affiche directement le 3ème du podium
+            afficherPodium(); // Ceci gérera l'affichage du 3ème
+            podiumState = 1; 
+            revealedHistory.push('podium_3');
+            updateBackButtonVisibility();
+          } else {
+            // Sinon, on commence par révéler les binômes un par un (du dernier vers le 4ème)
+            revelerBinomeSuivant();
+          }
+        } else {
+          classementContainer.innerHTML = '<div class="binome-card active" style="padding: 30px;"><div class="card-name" style="font-size:1.5em;">Aucun classement disponible.</div><div class="card-details" style="font-size:0.8em;">Veuillez d\'abord générer le classement sur la page principale.</div></div>';
+        }
+      }, 500); 
+    });
+
+    document.body.addEventListener('click', () => {
+      if (isCountdownActive) return; // Empêche les clics pendant le compte à rebours
+
+      if (classementComplet.length > 0) {
+        if (podiumState === 0) { 
+          const binomesRestantsAvantRevel = classementComplet.length - currentIndex;
+          if (binomesRestantsAvantRevel > 3) { // On est encore dans la phase de révélation des binômes non-podium
+            revelerBinomeSuivant();
+          } else if (binomesRestantsAvantRevel === 3) { // Il ne reste que 3 binômes à révéler (le podium)
+            afficherPodium();
+            podiumState = 1; 
+            revealedHistory.push('podium_3'); // Enregistre que le 3ème est affiché
+            updateBackButtonVisibility();
+          }
+        } else if (podiumState === 1) { 
+          // Le 3ème est affiché, maintenant on veut le compte à rebours pour le 1er
+          startCountdown(); // Pas besoin de passer le rang, c'est toujours pour le 1er après le 3ème
+          revealedHistory.push('countdown_started'); // Enregistre le début du compte à rebours
+          updateBackButtonVisibility();
+        } else if (podiumState === 3) { // Si tout est affiché, le clic ne fait rien de plus pour l'instant
+            console.log("Classement entièrement affiché.");
+        }
+        // Les états 2 et 3 sont gérés automatiquement après le compte à rebours dans startCountdown
+      }
+    });
+
+    backButton.addEventListener('click', (event) => {
+        event.stopPropagation(); // Empêche le clic de déclencher aussi l'avancement du classement
+        if (isCountdownActive) return;
+
+        const lastState = revealedHistory.pop(); // Retire le dernier état de la pile
+
+        if (!lastState) { // Si la pile est vide, rien à faire
+            updateBackButtonVisibility();
+            return;
+        }
+
+        if (lastState.startsWith('revealed_')) {
+            // Revenir d'un binôme non-podium
+            currentIndex--; // On recule l'index
+            const prevRank = classementComplet.length - currentIndex;
+            const binome = classementComplet[classementComplet.length - 1 - currentIndex];
+            
+            classementContainer.innerHTML = '';
+            const card = document.createElement('div');
+            card.className = 'binome-card active';
+            card.innerHTML = `
+                <div class="card-rank">${prevRank}</div>
+                <div class="card-name">${binome.name}</div>
+                ${formatMatchHistory(binome, tourActuel)}
+            `;
+            classementContainer.appendChild(card);
+            classementContainer.style.display = 'flex';
+            podiumContainer.classList.remove('active');
+            podiumState = 0; // On revient à l'état de révélation individuelle
+        } else if (lastState === 'podium_3') {
+            // Revenir du 3ème du podium à la révélation individuelle (ou rien si pas de binômes avant)
+            hidePodiumElements(); // Cache tout le podium
+            if (classementComplet.length > 3) {
+                currentIndex = 0; // Réinitialise l'index pour réafficher le bon dernier binôme non-podium
+                classementContainer.style.display = 'flex';
+                // Affiche le dernier binôme non-podium (qui est le 4ème au classement complet)
+                const binome = classementComplet[classementComplet.length - 4]; // (length - 1 - (currentIndex (qui est 0)) - 3 (pour le 4ème))
+                const rank = classementComplet.length - 3; // Le rang du 4ème
+                
+                classementContainer.innerHTML = '';
+                const card = document.createElement('div');
+                card.className = 'binome-card active';
+                card.innerHTML = `
+                    <div class="card-rank">${rank}</div>
+                    <div class="card-name">${binome.name}</div>
+                    ${formatMatchHistory(binome, tourActuel)}
+                `;
+                classementContainer.appendChild(card);
+                podiumState = 0; // On revient à l'état de révélation individuelle
+                currentIndex = classementComplet.length - 3; // On se positionne avant le 4ème pour le prochain clic
+            } else {
+                // Si seulement 3 binômes au début, on revient à l'état initial (rien affiché)
+                classementContainer.innerHTML = '';
+                classementContainer.style.display = 'flex'; // Garde le container visible mais vide
+                podiumState = 0;
+            }
+        } else if (lastState === 'countdown_started') {
+            // Revenir du début du compte à rebours au 3ème du podium
+            countdownOverlay.classList.remove('active');
+            isCountdownActive = false;
+            // On s'assure que le 1er et le 2ème sont cachés (au cas où le retour est très rapide)
+            document.getElementById('podium-1').classList.remove('active');
+            document.getElementById('podium-2').classList.remove('active');
+            podiumState = 1; // Revenir à l'état "3ème affiché"
+            // Le 3ème est déjà affiché et visible, pas besoin de le réafficher
+        } else if (lastState === 'podium_2') {
+            // Revenir du 2ème au 1er
+            document.getElementById('podium-2').classList.remove('active');
+            podiumState = 2; // On revient à l'état "1er affiché"
+        } else if (lastState === 'podium_1') {
+            // Revenir du 1er au 3ème
+            document.getElementById('podium-1').classList.remove('active');
+            podiumState = 1; // On revient à l'état "3ème affiché"
+        }
+        updateBackButtonVisibility();
+    });
+
+    function updateBackButtonVisibility() {
+        if (revealedHistory.length > 0) {
+            backButton.classList.add('active');
+        } else {
+            backButton.classList.remove('active');
+        }
+    }
+
+
+    function chargerClassement() {
+      let binomesPrincipaux = JSON.parse(localStorage.getItem("binomes") || "[]");
+      tourActuel = parseInt(localStorage.getItem("tourActuel") || "1");
+
+      if (binomesPrincipaux.length === 0) {
+        classementComplet = [];
+        return;
+      }
+
+      let binomesPourClassement = JSON.parse(JSON.stringify(binomesPrincipaux));
+
+      binomesPourClassement.forEach(b => {
+        let totalEcart = 0;
+        let patternResultats = '';
+        b.matchs = b.matchs || [];
+
+        for (let i = 0; i < tourActuel; i++) {
+          const m = b.matchs[i];
+          if (m && m.adv !== null) {
+            const ecart = m.score1 - m.score2;
+            totalEcart += ecart;
+            if (ecart > 0) {
+              patternResultats += 'V';
+            } else if (ecart < 0) {
+              patternResultats += 'D';
+            } else {
+              patternResultats += 'N';
+            }
+          } else {
+            patternResultats += '-';
+          }
+        }
+        b.ecartTotal = totalEcart;
+        b.pattern = patternResultats;
+      });
+
+      binomesPourClassement.sort((a, b) => {
+        const victoiresA = (a.pattern.match(/V/g) || []).length;
+        const victoiresB = (b.pattern.match(/V/g) || []).length;
+
+        if (victoiresB !== victoiresA) {
+          return victoiresB - victoiresA;
+        }
+
+        const patternCompare = b.pattern.localeCompare(a.pattern);
+        if (patternCompare !== 0) {
+          return patternCompare;
+        }
+
+        return b.ecartTotal - a.ecartTotal;
+      });
+
+      classementComplet = binomesPourClassement;
+    }
+
+    function formatMatchHistory(binome, limit = 3) {
+        const playedMatches = binome.matchs.filter(m => m && m.adv !== null);
+        const recentMatches = playedMatches.slice(Math.max(0, playedMatches.length - limit));
+
+        if (recentMatches.length === 0) {
+            return '<div class="card-match-item">Aucun match joué</div>';
+        }
+
+        let html = '<div class="card-match-history">';
+        recentMatches.forEach((match, index) => {
+            let outcome = '';
+            let outcomeClass = '';
+            if (match.score1 > match.score2) {
+                outcome = 'V';
+                outcomeClass = 'win';
+            } else if (match.score1 < match.score2) {
+                outcome = 'D';
+                outcomeClass = 'loss';
+            } else {
+                outcome = 'N';
+                outcomeClass = 'draw';
+            }
+            html += `
+                <div class="card-match-item">
+                    <span>T${match.tour || (index + 1)} vs ${match.adv}</span> 
+                    <span class="match-result-score">${match.score1}-${match.score2}</span>
+                    <span class="match-outcome ${outcomeClass}">${outcome}</span>
+                </div>
+            `;
+        });
+        html += '</div>';
+        return html;
+    }
+
+
+    function revelerBinomeSuivant() {
+        const binomesRestantsAvantRevel = classementComplet.length - currentIndex;
+
+        if (binomesRestantsAvantRevel <= 3) {
+            return; 
+        }
+
+        const binome = classementComplet[classementComplet.length - 1 - currentIndex]; 
+        const rank = classementComplet.length - currentIndex;
+
+        const card = document.createElement('div');
+        card.className = 'binome-card';
+        card.innerHTML = `
+            <div class="card-rank">${rank}</div>
+            <div class="card-name">${binome.name}</div>
+            ${formatMatchHistory(binome, tourActuel)}
+        `;
+        classementContainer.innerHTML = ''; 
+        classementContainer.appendChild(card);
+
+        setTimeout(() => {
+            card.classList.add('active');
+        }, 50); 
+        
+        revealedHistory.push('revealed_' + rank); // Enregistre la révélation
+        updateBackButtonVisibility();
+        currentIndex++;
+    }
+
+    function afficherPodium() {
+      classementContainer.style.display = 'none'; 
+      podiumContainer.classList.add('active'); 
+
+      const troisieme = classementComplet[2]; 
+      if (troisieme) {
+        const p3 = document.getElementById('podium-3');
+        p3.querySelector('.podium-name').textContent = troisieme.name;
+        p3.querySelector('.podium-details').innerHTML = formatMatchHistoryPodium(troisieme, tourActuel);
+        setTimeout(() => p3.classList.add('active'), 100); 
+      }
+    }
+    
+    function hidePodiumElements() {
+        document.getElementById('podium-1').classList.remove('active');
+        document.getElementById('podium-2').classList.remove('active');
+        document.getElementById('podium-3').classList.remove('active');
+        podiumContainer.classList.remove('active');
+    }
+
+    function startCountdown() {
+        isCountdownActive = true;
+        countdownOverlay.classList.add('active');
+        let count = 3;
+
+        const interval = setInterval(() => {
+            countdownNumber.textContent = count;
+            countdownNumber.style.animation = 'none'; 
+            void countdownNumber.offsetWidth; 
+            countdownNumber.style.animation = 'countdownPop 0.8s ease-out forwards'; 
+
+            if (count === 0) {
+                clearInterval(interval);
+                countdownOverlay.classList.remove('active');
+                isCountdownActive = false;
+                
+                revealFirstPlace();
+                revealedHistory.push('podium_1'); // Enregistre la révélation du 1er
+                updateBackButtonVisibility();
+
+                // Une fois le 1er révélé, on enchaîne automatiquement sur le 2nd
+                setTimeout(() => {
+                    revealSecondPlace();
+                    revealedHistory.push('podium_2'); // Enregistre la révélation du 2nd
+                    updateBackButtonVisibility();
+                    podiumState = 3; // Le classement est maintenant entièrement affiché
+                }, 1000); 
+            } else {
+                count--;
+            }
+        }, 1000);
+    }
+
+    function revealSecondPlace() {
+        const deuxieme = classementComplet[1];
+        if (deuxieme) {
+            const p2 = document.getElementById('podium-2');
+            p2.querySelector('.podium-name').textContent = deuxieme.name;
+            p2.querySelector('.podium-details').innerHTML = formatMatchHistoryPodium(deuxieme, tourActuel);
+            p2.classList.add('active');
+        }
+    }
+
+    function revealFirstPlace() {
+        const premier = classementComplet[0];
+        if (premier) {
+            const p1 = document.getElementById('podium-1');
+            p1.querySelector('.podium-name').textContent = premier.name;
+            p1.querySelector('.podium-details').innerHTML = formatMatchHistoryPodium(premier, tourActuel);
+            p1.classList.add('active');
+        }
+        podiumState = 2; // Le 1er est maintenant affiché
+    }
+
+    function formatMatchHistoryPodium(binome, limit = 3) {
+        const playedMatches = binome.matchs.filter(m => m && m.adv !== null);
+        const allPlayedMatches = playedMatches; 
+
+        if (allPlayedMatches.length === 0) {
+            return '<div>Aucun match joué</div>';
+        }
+
+        let html = '';
+        allPlayedMatches.forEach((match, index) => {
+            let outcome = '';
+            let outcomeClass = '';
+            if (match.score1 > match.score2) {
+                outcome = 'V';
+                outcomeClass = 'win';
+            } else if (match.score1 < match.score2) {
+                outcome = 'D';
+                outcomeClass = 'loss';
+            } else {
+                outcome = 'N';
+                outcomeClass = 'draw';
+            }
+            html += `
+                <div class="podium-match-item">
+                    <span>T${match.tour || (index + 1)} vs ${match.adv}</span> 
+                    <span class="match-result-score">${match.score1}-${match.score2}</span>
+                    <span class="podium-match-outcome ${outcomeClass}">${outcome}</span>
+                </div>
+            `;
+        });
+        return html;
+    }
+
+  </script>
+</body>
+</html>

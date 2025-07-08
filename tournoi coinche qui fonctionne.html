@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tournoi de Coinche</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f8f9fa;
+      margin: 0;
+      padding: 20px;
+    }
+    h1, h2 {
+      text-align: center;
+      color: #333;
+    }
+    .container {
+      max-width: 1000px;
+      margin: auto;
+    }
+    .section {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    input[type="text"], input[type="number"] {
+      padding: 10px;
+      margin: 5px;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 10px 5px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      padding: 10px;
+      text-align: center;
+      border-bottom: 1px solid #ddd;
+    }
+    .binome-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 0;
+    }
+    .match-input {
+      width: 70px; /* Augmenté pour 4 chiffres */
+      text-align: center;
+    }
+    .match-row {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 10px;
+        gap: 10px;
+    }
+    .match-id { /* Nouvelle classe pour l'identifiant du match */
+        font-size: 0.8em; /* Réduit la taille de la police */
+        color: #666; /* Rend la couleur plus discrète */
+        font-weight: normal; /* Enlève le gras si tu veux */
+    }
+    .winner {
+      color: #28a745; /* Vert */
+      font-weight: bold;
+    }
+    .loser {
+      color: #dc3545; /* Rouge */
+    }
+
+    /* Styles pour les onglets */
+    .tabs {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 20px;
+    }
+    .tab-button {
+        padding: 10px 20px;
+        cursor: pointer;
+        border: 1px solid #ddd;
+        border-bottom: none;
+        background-color: #e0e0e0; /* Un gris plus marqué */
+        color: #555; /* Texte plus foncé pour le contraste */
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+        margin: 0 2px;
+        transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    .tab-button:hover {
+        background-color: #d0d0d0; /* Un peu plus foncé au survol */
+    }
+    .tab-button.active {
+        background-color: #007bff;
+        color: white;
+        border-color: #007bff;
+        font-weight: bold;
+    }
+    .tab-content {
+        display: none;
+        padding: 20px;
+        border: 1px solid #ccc;
+        border-radius: 0 0 8px 8px;
+        background-color: white;
+    }
+    .tab-content.active {
+        display: block;
+    }
+    
+    /* Styles pour les sections repliables */
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #eee;
+      margin-bottom: 15px;
+    }
+    .section-header h2 {
+      margin: 0;
+      text-align: left;
+    }
+    .toggle-button {
+      font-size: 1.5em;
+      line-height: 1;
+      padding: 0 10px;
+    }
+    .section-content {
+      display: block; /* Par défaut, les contenus sont affichés */
+    }
+    .section-content.hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Tournoi de Coinche</h1>
+
+    <div class="section">
+      <div class="section-header" onclick="toggleSection('binomeSection')">
+        <h2 id="binomeSectionTitle">Créer un binôme</h2>
+        <span class="toggle-button" id="binomeToggleButton">-</span>
+      </div>
+      <div class="section-content" id="binomeSection">
+        <input type="text" id="binomeName" placeholder="Nom du binôme" />
+        <input type="text" id="joueur1" placeholder="Nom Prénom joueur 1" />
+        <input type="text" id="joueur2" placeholder="Nom Prénom joueur 2" />
+        <button onclick="ajouterBinome()">Ajouter le binôme</button>
+        <hr>
+        <input type="number" id="nbBinomesAleatoires" value="8" min="2" step="2" placeholder="Nombre de binômes (pair)" />
+        <button onclick="genererBinomesAleatoires()">Générer binômes aléatoires</button>
+        <button onclick="nouveauTournoi()">🔄 Nouveau tournoi</button>
+        <p><strong>Nombre de binômes :</strong> <span id="nbBinomes">0</span></p>
+        <div id="listeBinomes"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header" onclick="toggleSection('gestionToursSection')">
+        <h2 id="gestionToursSectionTitle">Gestion des Tours</h2>
+        <span class="toggle-button" id="gestionToursToggleButton">-</span>
+      </div>
+      <div class="section-content" id="gestionToursSection">
+        <div class="tabs">
+            <button class="tab-button active" onclick="showTab(1)">Tour 1</button>
+            <button class="tab-button" onclick="showTab(2)">Tour 2</button>
+            <button class="tab-button" onclick="showTab(3)">Tour 3</button>
+        </div>
+
+        <div id="tab1Content" class="tab-content active">
+            <h3>Matchs du Tour 1</h3>
+            <button id="btnGenererTour1" onclick="genererTour(1)">Générer 1er Tour</button>
+            <button onclick="genererScoresAleatoires(1)">Scores aléatoires 1er Tour</button>
+            <div id="displayTour1"></div>
+        </div>
+
+        <div id="tab2Content" class="tab-content">
+            <h3>Matchs du Tour 2</h3>
+            <button id="btnGenererTour2" onclick="genererTour(2)">Générer Tour 2</button>
+            <button onclick="genererScoresAleatoires(2)">Scores aléatoires Tour 2</button>
+            <div id="displayTour2"></div>
+        </div>
+
+        <div id="tab3Content" class="tab-content">
+            <h3>Matchs du Tour 3</h3>
+            <button id="btnGenererTour3" onclick="genererTour(3)">Générer Tour 3</button>
+            <button onclick="genererScoresAleatoires(3)">Scores aléatoires Tour 3</button>
+            <div id="displayTour3"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-header" onclick="toggleSection('classementSection')">
+        <h2 id="classementSectionTitle">Classement</h2>
+        <span class="toggle-button" id="classementToggleButton">-</span>
+      </div>
+      <div class="section-content" id="classementSection">
+        <button onclick="genererClassement()">Calculer classement</button>
+        <button onclick="window.open('classement_final.html', '_blank')">Afficher Classement Final</button>
+        <button onclick="genererPDF()">📥 Générer PDF</button> 
+        <table id="tableClassement">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Binôme</th>
+              <th>Résultat</th>
+              <th>Écart total</th>
+            </tr>
+          </thead>
+          <tbody>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // --- Initialisation des variables globales ---
+    let binomes = JSON.parse(localStorage.getItem("binomes") || "[]");
+    let tourActuel = parseInt(localStorage.getItem("tourActuel") || "1"); // Sauvegarde du tour actuel
+
+    // --- Fonctions utilitaires et de gestion de l'état ---
+
+    // Sauvegarde les données des binômes et le tour actuel dans le localStorage
+    function sauvegarder() {
+      localStorage.setItem("binomes", JSON.stringify(binomes));
+      localStorage.setItem("tourActuel", tourActuel);
+      document.getElementById("nbBinomes").textContent = binomes.length;
+    }
+
+    // Affiche la liste des binômes inscrits
+    function afficherBinomes() {
+      const liste = document.getElementById("listeBinomes");
+      liste.innerHTML = "";
+      binomes.forEach((b, i) => {
+        const div = document.createElement("div");
+        div.className = "binome-item";
+        div.innerHTML = `
+          <span><strong>${b.name}</strong> : ${b.joueur1} & ${b.joueur2}</span>
+          <span>
+            <button onclick="modifierBinome(${i})">✏️</button>
+            <button onclick="supprimerBinome(${i})">🗑️</button>
+          </span>
+        `;
+        liste.appendChild(div);
+      });
+      sauvegarder();
+    }
+
+    // Affiche les matchs pour un tour spécifique
+    function afficherMatchs(numTour) {
+      const displayDiv = document.getElementById(`displayTour${numTour}`);
+      if (!displayDiv) {
+          console.error(`Le conteneur displayTour${numTour} n'existe pas.`);
+          return;
+      }
+      displayDiv.innerHTML = '';
+
+      const binomesWithMatches = binomes.filter(b => b.matchs && b.matchs[numTour - 1]);
+      const displayedPairs = new Set(); // Pour éviter de dessiner deux fois le même match
+      const matchesToDisplay = []; // Tableau temporaire pour stocker les matchs uniques à afficher
+
+      binomesWithMatches.forEach(b => {
+        const match = b.matchs[numTour - 1];
+        if (match && match.adv) {
+          const adversaire = binomes.find(adv => adv.name === match.adv);
+
+          if (adversaire) {
+            const pairId = [b.name, adversaire.name].sort().join('-');
+
+            if (!displayedPairs.has(pairId)) {
+                // Stocker le match unique avec l'ID pour le tri
+                matchesToDisplay.push({
+                    idMatch: match.idMatch,
+                    binome1: b.name,
+                    binome2: adversaire.name,
+                    score1: match.score1,
+                    score2: match.score2
+                });
+                displayedPairs.add(pairId);
+            }
+          }
+        }
+      });
+
+      // Tri des matchs par idMatch avant l'affichage
+      matchesToDisplay.sort((a, b) => {
+          // Extraire le numéro du match (M1, M2, etc.) pour le tri numérique
+          const getMatchNumber = (id) => parseInt(id.split('-M')[1]);
+          return getMatchNumber(a.idMatch) - getMatchNumber(b.idMatch);
+      });
+
+
+      matchesToDisplay.forEach(matchData => {
+        // const b = binomes.find(bin => bin.name === matchData.binome1); // Retrouver le binôme original pour ses scores
+        // const adversaire = binomes.find(bin => bin.name === matchData.binome2);
+
+        let classBinome1 = '';
+        let classBinome2 = '';
+
+        // Assurez-vous d'utiliser les scores de matchData car 'b' pourrait ne pas avoir l'ordre correct
+        if (matchData.score1 > matchData.score2) {
+          classBinome1 = 'winner';
+          classBinome2 = 'loser';
+        } else if (matchData.score1 < matchData.score2) {
+          classBinome1 = 'loser';
+          classBinome2 = 'winner';
+        }
+        
+        const matchRow = document.createElement('div');
+        matchRow.className = 'match-row';
+        matchRow.innerHTML = `
+          <span class="match-id">${matchData.idMatch || ''} :</span>  <span class="${classBinome1}">${matchData.binome1}</span>
+          <input type="number" class="match-input" value="${matchData.score1}" 
+                 onchange="updateScore('${matchData.binome1}', '${matchData.binome2}', ${numTour}, this.value, 'score1')">
+          <span>-</span>
+          <input type="number" class="match-input" value="${matchData.score2}" 
+                 onchange="updateScore('${matchData.binome1}', '${matchData.binome2}', ${numTour}, this.value, 'score2')">
+          <span class="${classBinome2}">${matchData.binome2}</span>
+        `;
+        displayDiv.appendChild(matchRow);
+      });
+    }
+
+    // Fonctions de gestion des onglets
+    function showTab(tabNumber) {
+        document.querySelectorAll('.tab-button').forEach(button => {
+            button.classList.remove('active');
+        });
+        document.querySelectorAll('.tab-content').forEach(tab => {
+            tab.classList.remove('active');
+        });
+
+        document.querySelector(`.tab-button:nth-child(${tabNumber})`).classList.add('active');
+        document.getElementById(`tab${tabNumber}Content`).classList.add('active');
+        
+        tourActuel = tabNumber;
+        sauvegarder();
+        afficherMatchs(tourActuel);
+    }
+
+    // --- Fonctions de gestion des binômes ---
+    function ajouterBinome() {
+      const name = document.getElementById("binomeName").value.trim();
+      const joueur1 = document.getElementById("joueur1").value.trim();
+      const joueur2 = document.getElementById("joueur2").value.trim();
+      if (!name || !joueur1 || !joueur2) return alert("Champs manquants");
+
+      if (binomes.some(b => b.name === name)) {
+          alert(`Le binôme "${name}" existe déjà. Veuillez choisir un autre nom.`);
+          return;
+      }
+
+      binomes.push({ name, joueur1, joueur2, matchs: [] });
+      document.getElementById("binomeName").value = "";
+      document.getElementById("joueur1").value = "";
+      document.getElementById("joueur2").value = "";
+      afficherBinomes();
+    }
+
+    function modifierBinome(i) {
+      const b = binomes[i];
+      const newName = prompt("Nom de l'équipe :", b.name);
+      const newJoueur1 = prompt("Joueur 1 :", b.joueur1);
+      const newJoueur2 = prompt("Joueur 2 :", b.joueur2);
+
+      if (newName && newJoueur1 && newJoueur2) {
+        if (binomes.some((bino, idx) => bino.name === newName && idx !== i)) {
+            alert(`Le binôme "${newName}" existe déjà. Veuillez choisir un autre nom.`);
+            return;
+        }
+
+        const oldName = binomes[i].name;
+        binomes[i].name = newName;
+        binomes[i].joueur1 = newJoueur1;
+        binomes[i].joueur2 = newJoueur2;
+
+        // Mettre à jour les références dans les matchs des autres binômes
+        binomes.forEach(otherBinome => {
+            if (otherBinome.matchs) {
+                otherBinome.matchs.forEach(match => {
+                    if (match.adv === oldName) {
+                        match.adv = newName;
+                    }
+                });
+            }
+        });
+
+        afficherBinomes();
+        afficherMatchs(tourActuel); // Rafraîchir l'affichage du tour en cours
+        genererClassement();
+      }
+    }
+
+    function supprimerBinome(i) {
+      if (confirm("Supprimer ce binôme et tous ses matchs ?")) {
+        const binomeASupprimer = binomes[i];
+        binomes.splice(i, 1);
+
+        binomes.forEach(b => {
+          if (b.matchs) {
+            b.matchs = b.matchs.filter(m => m.adv !== binomeASupprimer.name);
+          }
+        });
+
+        afficherBinomes();
+        afficherMatchs(tourActuel); // Rafraîchir l'affichage du tour en cours
+        genererClassement();
+      }
+    }
+
+    function nouveauTournoi() {
+      if (confirm("Effacer tous les binômes et résultats ? Cette action est irréversible.")) {
+        binomes = [];
+        tourActuel = 1; // Retour au tour 1
+        localStorage.removeItem("binomes");
+        localStorage.removeItem("tourActuel");
+        afficherBinomes();
+        // Nettoyer les divs de displayTour
+        for (let i = 1; i <= 3; i++) { // Adapter si plus de tours
+            const displayDiv = document.getElementById(`displayTour${i}`);
+            if (displayDiv) displayDiv.innerHTML = "";
+        }
+        document.querySelector("#tableClassement tbody").innerHTML = "";
+        showTab(1); // Revenir à l'onglet du Tour 1
+      }
+    }
+
+    function genererBinomesAleatoires() {
+      let nb = parseInt(document.getElementById("nbBinomesAleatoires").value);
+      // Correction: Ne permettre que des nombres pairs pour démarrer le tournoi
+      if (isNaN(nb) || nb < 4 || nb % 2 !== 0) { // Minimum 4 pour diviser en 4 groupes potentiellement
+          alert("Veuillez entrer un nombre PAIR et supérieur ou égal à 4 pour le nombre de binômes. Le tournoi ne peut avoir que des matchs complets et des divisions en 4 groupes.");
+          return;
+      }
+      
+      const noms = ["Tornades", "Panthères", "Dragons", "Aigles", "Loups", "Phénix", "Requins", "Titans", "Rockets", "Ninjas", "Pythons", "Comètes", "Sphinx", "Griffons", "Chimères", "Minotaures"];
+      const prenoms = ["Alex", "Max", "Léa", "Zoe", "Lucas", "Emma", "Tom", "Maya", "Hugo", "Nina", "Léo", "Iris", "Evan", "Jade", "Noah", "Sara", "Adam", "Chloé"];
+      
+      binomes = []; // Réinitialise les binômes existants
+      for (let i = 0; i < nb; i++) {
+        const team = noms[i % noms.length] + " " + (i + 1);
+        const j1 = prenoms[Math.floor(Math.random() * prenoms.length)] + " " + String.fromCharCode(65 + Math.floor(Math.random() * 26));
+        const j2 = prenoms[Math.floor(Math.random() * prenoms.length)] + " " + String.fromCharCode(65 + Math.floor(Math.random() * 26));
+        binomes.push({ name: team, joueur1: j1, joueur2: j2, matchs: [] });
+      }
+      tourActuel = 1; // On revient toujours au tour 1 après génération aléatoire
+      afficherBinomes();
+      // Nettoyer les divs de displayTour
+      for (let i = 1; i <= 3; i++) { // Adapter si plus de tours
+          const displayDiv = document.getElementById(`displayTour${i}`);
+          if (displayDiv) displayDiv.innerHTML = "";
+      }
+      document.querySelector("#tableClassement tbody").innerHTML = "";
+      showTab(1);
+    }
+
+    // Fonction d'appariement en serpentin pour un groupe donné (qui sera toujours de taille paire)
+    function apparierGroupe(groupe) {
+        let paires = [];
+        let tempGroupe = [...groupe]; // Copie pour manipulation
+        while (tempGroupe.length >= 2) {
+            const b1 = tempGroupe.shift(); // Premier (le meilleur)
+            const b2 = tempGroupe.pop();   // Dernier (le moins bon)
+            paires.push([b1, b2]);
+        }
+        return paires;
+    }
+
+
+    // --- Fonctions de gestion des matchs et scores ---
+
+    function genererTour(numTour) {
+      if (binomes.length < 2) {
+        alert("Veuillez ajouter au moins 2 binômes.");
+        return;
+      }
+      
+      // Nouvelle règle: le nombre de binômes doit être pair pour que tous puissent jouer
+      if (binomes.length % 2 !== 0) {
+        alert("Le nombre de binômes doit être PAIR pour générer un tour complet sans 'Bye'. Veuillez ajouter ou supprimer un binôme.");
+        return;
+      }
+
+      // S'assurer que chaque binôme a un tableau de matchs initialisé
+      binomes.forEach(b => {
+          if (!b.matchs) {
+              b.matchs = [];
+          }
+      });
+
+      // Réinitialiser les matchs du tour en cours avant de les générer
+      binomes.forEach(b => {
+          b.matchs[numTour - 1] = null;
+      });
+
+      if (numTour === 1) {
+        let matchCounter = 1; // Initialisation du compteur de match pour le tour 1
+        const shuffledBinomes = [...binomes].sort(() => Math.random() - 0.5);
+        for (let i = 0; i < shuffledBinomes.length; i += 2) {
+          const b1 = binomes.find(b => b.name === shuffledBinomes[i].name);
+          const b2 = binomes.find(b => b.name === shuffledBinomes[i + 1].name);
+
+          if (b1 && b2) {
+              const matchId = `T${numTour}-M${matchCounter}`;
+              b1.matchs[0] = { adv: b2.name, score1: 0, score2: 0, idMatch: matchId };
+              b2.matchs[0] = { adv: b1.name, score1: 0, score2: 0, idMatch: matchId };
+              matchCounter++;
+          }
+        }
+        tourActuel = 1;
+      } 
+      else if (numTour === 2) {
+        // Vérifier si le Tour 1 a été joué pour tous les binômes
+        const tourPrecedent = 1;
+        const tourPrecedentIncomplet = binomes.some(b => !b.matchs || !b.matchs[tourPrecedent - 1] || b.matchs[tourPrecedent - 1].score1 === undefined || b.matchs[tourPrecedent - 1].adv === undefined);
+        if (tourPrecedentIncomplet) {
+            alert(`Veuillez générer et saisir tous les scores du Tour ${tourPrecedent} avant de générer le Tour ${numTour}.`);
+            return;
+        }
+
+        // 1. Calculer l'écart de points pour chaque binôme après le Tour précédent
+        binomes.forEach(b => {
+            b.ecartPointsTotal = 0; // Réinitialise l'écart total avant de le recalculer
+            // Recalcul du pattern pour s'assurer qu'il est à jour pour le Tour 2
+            let patternResultats = '';
+            for (let i = 0; i < tourPrecedent; i++) {
+                const m = b.matchs[i];
+                if (m && m.adv !== null) {
+                    const ecart = m.score1 - m.score2;
+                    b.ecartPointsTotal += ecart;
+                    if (ecart > 0) {
+                        patternResultats += 'V';
+                    } else if (ecart < 0) {
+                        patternResultats += 'D';
+                    } else { // Match nul
+                        patternResultats += 'N';
+                    }
+                } else {
+                    patternResultats += '-';
+                }
+            }
+            b.pattern = patternResultats; // Met à jour le pattern pour le tri
+        });
+
+        // 2. Créer le classement général unique basé sur l'écart total de points
+        let classementGeneral = [...binomes].sort((a, b) => {
+            // Tri comme dans genererClassement pour le Tour 2
+            const victoiresA = (a.pattern.match(/V/g) || []).length;
+            const victoiresB = (b.pattern.match(/V/g) || []).length;
+
+            if (victoiresB !== victoiresA) {
+                return victoiresB - victoiresA;
+            }
+            // Tri alphabétique inverse du pattern pour le Tour 2 (VV > VD > DV > DD etc.)
+            const patternCompare = b.pattern.localeCompare(a.pattern);
+            if (patternCompare !== 0) {
+                return patternCompare;
+            }
+            return b.ecartPointsTotal - a.ecartPointsTotal; // Du meilleur écart (positif) au pire (négatif)
+        });
+
+        const N = classementGeneral.length; // Nombre total de binômes
+        let groupe1 = [];
+        let groupe2 = [];
+        
+        const N_sur_2 = N / 2;
+
+        if (N_sur_2 % 2 === 0) { // N/2 est pair (Ex: N=8, N/2=4)
+            groupe1 = classementGeneral.slice(0, N_sur_2);
+            groupe2 = classementGeneral.slice(N_sur_2);
+        } else { // N/2 est impair (Ex: N=10, N/2=5)
+            // Prioriser les premiers groupes pour absorber l'imparité
+            groupe1 = classementGeneral.slice(0, N_sur_2 + 1); // 5 + 1 = 6
+            groupe2 = classementGeneral.slice(N_sur_2 + 1);     // 5 - 1 = 4
+        }
+        
+        let pairesTourX = [];
+        pairesTourX.push(...apparierGroupe(groupe1));
+        pairesTourX.push(...apparierGroupe(groupe2));
+
+        let matchCounter = 1; // Initialisation du compteur de match pour le tour 2
+        // Assigner les matchs aux binômes dans le tableau global `binomes`
+        pairesTourX.forEach(pair => {
+            const binomeA = binomes.find(b => b.name === pair[0].name);
+            const binomeB = binomes.find(b => b.name === pair[1].name);
+
+            if (binomeA && binomeB) {
+                const matchId = `T${numTour}-M${matchCounter}`;
+                binomeA.matchs[numTour - 1] = { adv: binomeB.name, score1: 0, score2: 0, idMatch: matchId };
+                binomeB.matchs[numTour - 1] = { adv: binomeA.name, score1: 0, score2: 0, idMatch: matchId };
+                matchCounter++;
+            }
+        });
+        
+        tourActuel = numTour;
+
+      } 
+      else if (numTour === 3) {
+        // Vérifier si le Tour 2 a été joué pour tous les binômes
+        const tourPrecedent = 2;
+        const tourPrecedentIncomplet = binomes.some(b => !b.matchs || !b.matchs[tourPrecedent - 1] || b.matchs[tourPrecedent - 1].score1 === undefined || b.matchs[tourPrecedent - 1].adv === undefined);
+        if (tourPrecedentIncomplet) {
+            alert(`Veuillez générer et saisir tous les scores du Tour ${tourPrecedent} avant de générer le Tour ${numTour}.`);
+            return;
+        }
+
+        // 1. Calculer le pattern (V/D/N sur les 2 tours) et l'écart de points total
+        binomes.forEach(b => {
+            let totalEcart = 0;
+            let patternResultats = '';
+            for (let i = 0; i < tourPrecedent; i++) { // Seulement les 2 premiers tours
+                const m = b.matchs[i];
+                if (m && m.adv !== null) {
+                    const ecart = m.score1 - m.score2;
+                    totalEcart += ecart;
+                    if (ecart > 0) {
+                        patternResultats += 'V';
+                    } else if (ecart < 0) {
+                        patternResultats += 'D';
+                    } else {
+                        patternResultats += 'N'; // Assure que 'N' est géré pour le pattern
+                    }
+                } else {
+                    patternResultats += '-';
+                }
+            }
+            b.ecartTotal = totalEcart;
+            b.pattern = patternResultats;
+        });
+
+        // 2. Créer les 4 groupes basés sur les patterns "VV", "VD", "DV", "DD"
+        let groupes = {
+            'VV': [],
+            'VD': [],
+            'DV': [],
+            'DD': []
+        };
+        
+        binomes.forEach(b => {
+            const patternClean = b.pattern.replace(/-/g, ''); // Nettoyer les '-' si présents
+            if (groupes[patternClean]) {
+                groupes[patternClean].push(b);
+            } else {
+                // Si un binôme a un pattern qui n'est pas strict (ex: 'VN' ou 'NV' s'il y a eu des nuls),
+                // il ne sera pas placé dans un groupe strict VV, VD, DV, DD.
+                // Pour le tour 3, on suppose que les patterns sont déterminés par V/D uniquement.
+                // Tu peux ajuster cette logique si tu veux gérer les nuls différemment ici.
+                console.warn(`Binôme ${b.name} avec un pattern inattendu pour le Tour 3: ${b.pattern}`);
+            }
+        });
+        
+        // 3. Trier chaque groupe par écart de points (décroissant)
+        Object.keys(groupes).forEach(key => {
+            groupes[key].sort((a, b) => b.ecartTotal - a.ecartTotal);
+        });
+
+        // 4. Assurer la parité et transférer les binômes si un groupe est impair
+        // Ordre des groupes pour le transfert: VV -> VD -> DV -> DD
+        const ordreGroupes = ['VV', 'VD', 'DV', 'DD'];
+        let binomesEnAttente = []; // Pour stocker les binômes déplacés temporairement
+
+        for (let i = 0; i < ordreGroupes.length; i++) {
+            const currentGroupName = ordreGroupes[i];
+            let currentGroup = groupes[currentGroupName];
+
+            // Ajouter les binômes en attente du groupe précédent
+            if (binomesEnAttente.length > 0) {
+                currentGroup.unshift(...binomesEnAttente); // Les binômes déplacés vont au début du groupe suivant
+                binomesEnAttente = []; // Vider le buffer
+                // Re-trier le groupe après ajout pour maintenir l'ordre par ecartTotal
+                currentGroup.sort((a, b) => b.ecartTotal - a.ecartTotal);
+            }
+
+            // Si le groupe est impair et ce n'est pas le dernier groupe, déplacer le dernier binôme
+            if (currentGroup.length % 2 !== 0 && i < ordreGroupes.length - 1) {
+                const binomeADeplacer = currentGroup.pop(); // Le moins bien classé est déplacé
+                binomesEnAttente.push(binomeADeplacer);
+            }
+        }
+        // Le dernier groupe (DD) doit absorber tous les binômes restants en attente pour garantir la parité finale.
+        if (binomesEnAttente.length > 0) {
+            groupes['DD'].unshift(...binomesEnAttente);
+            groupes['DD'].sort((a, b) => b.ecartTotal - a.ecartTotal); // Re-trier si ajout
+        }
+
+
+        let pairesTourX = [];
+        // 5. Apparier en serpentin au sein de chaque groupe (maintenant tous pairs)
+        Object.keys(groupes).forEach(key => {
+            pairesTourX.push(...apparierGroupe(groupes[key]));
+        });
+
+        let matchCounter = 1; // Initialisation du compteur de match pour le tour 3
+        // Assigner les matchs aux binômes dans le tableau global `binomes`
+        pairesTourX.forEach(pair => {
+            const binomeA = binomes.find(b => b.name === pair[0].name);
+            const binomeB = binomes.find(b => b.name === pair[1].name);
+
+            if (binomeA && binomeB) {
+                const matchId = `T${numTour}-M${matchCounter}`;
+                binomeA.matchs[numTour - 1] = { adv: binomeB.name, score1: 0, score2: 0, idMatch: matchId };
+                binomeB.matchs[numTour - 1] = { adv: binomeA.name, score1: 0, score2: 0, idMatch: matchId };
+                matchCounter++;
+            }
+        });
+        
+        tourActuel = numTour;
+
+      } 
+      else {
+        alert("Génération de tour non implémentée pour ce numéro de tour.");
+        return;
+      }
+
+      sauvegarder();
+      afficherMatchs(tourActuel);
+      genererClassement();
+      showTab(tourActuel); // S'assurer que le bon onglet est affiché
+    }
+
+    function genererScoresAleatoires(tour) {
+      binomes.forEach(b => {
+        const m = b.matchs && b.matchs[tour - 1]; // Accéder au match du bon tour
+        if (m && m.adv) { // Ne générer des scores que si un match existe (pas un bye)
+          let score1 = 0;
+          let score2 = 0;
+          
+          do {
+            let rawScore1 = Math.floor(Math.random() * 2501) + 500;
+            let rawScore2 = Math.floor(Math.random() * 2501) + 500;
+            
+            score1 = Math.round(rawScore1 / 100) * 100;
+            score2 = Math.round(rawScore2 / 100) * 100;
+
+            if (score1 === score2) {
+                // Assurer un score différent pour éviter les nuls
+                if (score2 + 100 <= 3000) {
+                    score2 += 100;
+                } else if (score2 - 100 >= 0) {
+                    score2 -= 100;
+                } else {
+                    score2 = (score1 === 0) ? 100 : score1 - 100;
+                }
+            }
+          } while (score1 === score2);
+
+          m.score1 = score1;
+          m.score2 = score2;
+          
+          // Mettre à jour le match de l'adversaire aussi
+          const adversaire = binomes.find(adv => adv.name === m.adv);
+          if (adversaire && adversaire.matchs[tour - 1]) {
+              adversaire.matchs[tour - 1].score1 = score2;
+              adversaire.matchs[tour - 1].score2 = score1;
+          }
+        }
+      });
+      sauvegarder();
+      afficherMatchs(tour);
+      genererClassement();
+    }
+
+    function updateScore(binomeName, adversaireName, numTour, value, scoreType) {
+        const score = parseInt(value);
+        
+        const currentBinome = binomes.find(b => b.name === binomeName);
+        const adversaireBinome = binomes.find(b => b.name === adversaireName);
+
+        if (currentBinome && currentBinome.matchs && currentBinome.matchs[numTour - 1] &&
+            adversaireBinome && adversaireBinome.matchs && adversaireBinome.matchs[numTour - 1]) {
+            
+            const currentMatch = currentBinome.matchs[numTour - 1];
+            const adversaireMatch = adversaireBinome.matchs[numTour - 1];
+
+            if (scoreType === 'score1') {
+                currentMatch.score1 = isNaN(score) ? 0 : score;
+                adversaireMatch.score2 = isNaN(score) ? 0 : score;
+            } else { // scoreType === 'score2'
+                currentMatch.score2 = isNaN(score) ? 0 : score;
+                adversaireMatch.score1 = isNaN(score) ? 0 : score;
+            }
+            
+            sauvegarder();
+            binomes = JSON.parse(localStorage.getItem("binomes") || "[]");
+            afficherMatchs(numTour);
+            genererClassement();
+        }
+    }
+
+
+    // --- Fonction de classement final ---
+    function genererClassement() {
+      binomes = JSON.parse(localStorage.getItem("binomes") || "[]");
+      
+      binomes.forEach(b => {
+        let totalEcart = 0;
+        let patternResultats = '';
+        
+        b.matchs = b.matchs || [];
+
+        for (let i = 0; i < tourActuel; i++) {
+            const m = b.matchs[i];
+            if (m && m.adv !== null) {
+                const ecart = m.score1 - m.score2;
+                totalEcart += ecart;
+                if (ecart > 0) {
+                    patternResultats += 'V';
+                } else if (ecart < 0) {
+                    patternResultats += 'D';
+                } else { 
+                    patternResultats += 'N';
+                }
+            } else { 
+                patternResultats += '-';
+            }
+        }
+        
+        b.ecartTotal = totalEcart;
+        b.pattern = patternResultats;
+      });
+
+      binomes.sort((a, b) => {
+        // Nouvelle logique de tri : priorité au pattern (ordre alphabétique inverse)
+        const patternCompare = b.pattern.localeCompare(a.pattern);
+        if (patternCompare !== 0) {
+            return patternCompare; // Trie "VV" avant "VD", "VD" avant "DV", etc.
+        }
+        
+        // En cas d'égalité sur le pattern, trie par écart total de points (décroissant)
+        return b.ecartTotal - a.ecartTotal;
+      });
+
+      const tbody = document.querySelector("#tableClassement tbody");
+      tbody.innerHTML = "";
+      binomes.forEach((b, i) => {
+        const scoresText = b.matchs && b.matchs.length > 0 ? b.matchs.map(m => {
+            if (m && m.adv !== null) return `${m.score1}-${m.score2}`;
+            return 'N/A';
+        }).slice(0, tourActuel).join(' | ') : 'Pas de matchs joués';
+
+        tbody.innerHTML += `
+          <tr>
+            <td>${i + 1}</td>
+            <td>${b.name}</td>
+            <td>${b.pattern.toUpperCase()}<br/><small>${scoresText}</small></td>
+            <td>${b.ecartTotal}</td>
+          </tr>
+        `;
+      });
+    }
+
+    // --- Fonction de génération de PDF ---
+    async function genererPDF() {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        let y = 20; // Position Y de départ sur le PDF
+        const margin = 10;
+        const lineHeight = 7;
+        const pageHeight = doc.internal.pageSize.height;
+
+        // Titre
+        doc.setFontSize(22);
+        doc.text("Rapport du Tournoi de Coinche", doc.internal.pageSize.getWidth() / 2, y, { align: "center" });
+        y += 20;
+
+        // Liste des participants
+        doc.setFontSize(16);
+        doc.text("Participants :", margin, y);
+        y += lineHeight;
+        doc.setFontSize(12);
+        binomes.forEach(b => {
+            doc.text(`- ${b.name} (${b.joueur1} & ${b.joueur2})`, margin + 5, y);
+            y += lineHeight;
+            if (y > pageHeight - margin) { // Nouvelle page si nécessaire
+                doc.addPage();
+                y = margin;
+            }
+        });
+        y += 10;
+
+        // Scores par tour
+        doc.setFontSize(16);
+        doc.text("Scores par Tour :", margin, y);
+        y += lineHeight;
+
+        for (let t = 1; t <= tourActuel; t++) {
+            doc.setFontSize(14);
+            doc.text(`--- Tour ${t} ---`, margin + 5, y);
+            y += lineHeight;
+            doc.setFontSize(12);
+
+            // Filtrer les binômes ayant des matchs pour ce tour
+            const binomesWithMatchesThisTour = binomes.filter(b => b.matchs && b.matchs[t - 1]);
+            const displayedPairs = new Set(); // Pour éviter les doublons dans le PDF
+            const matchesForPdf = []; // Temporaire pour trier les matchs avant l'impression PDF
+
+            binomesWithMatchesThisTour.forEach(b => {
+                const match = b.matchs[t - 1];
+                if (match && match.adv) {
+                    const adversaire = binomes.find(adv => adv.name === match.adv);
+                    if (adversaire) {
+                        const pairId = [b.name, adversaire.name].sort().join('-');
+                        if (!displayedPairs.has(pairId)) {
+                            matchesForPdf.push({ // Ajout pour le tri
+                                idMatch: match.idMatch,
+                                bName: b.name,
+                                score1: match.score1,
+                                score2: match.score2,
+                                advName: adversaire.name
+                            });
+                            displayedPairs.add(pairId);
+                        }
+                    }
+                }
+            });
+
+            // Tri pour le PDF
+            matchesForPdf.sort((a, b) => {
+                const getMatchNumber = (id) => parseInt(id.split('-M')[1]);
+                return getMatchNumber(a.idMatch) - getMatchNumber(b.idMatch);
+            });
+
+            matchesForPdf.forEach(matchData => {
+                doc.text(`${matchData.idMatch || ''} : ${matchData.bName} ${matchData.score1} - ${matchData.score2} ${matchData.advName}`, margin + 10, y);
+                y += lineHeight;
+                if (y > pageHeight - margin) {
+                    doc.addPage();
+                    y = margin;
+                    doc.setFontSize(14);
+                    doc.text(`--- Tour ${t} (suite) ---`, margin + 5, y);
+                    y += lineHeight;
+                    doc.setFontSize(12);
+                }
+            });
+            y += 5;
+        }
+        y += 10;
+
+        // Classement Final (capture du tableau HTML)
+        doc.setFontSize(16);
+        doc.text("Classement Final :", margin, y);
+        y += lineHeight;
+
+        // Vérifie si le tableau est vide avant de tenter de le capturer
+        const table = document.getElementById('tableClassement');
+        if (table && table.querySelector('tbody').children.length > 0) {
+            const canvas = await html2canvas(table, {
+                scale: 2, // Augmente la résolution de la capture pour une meilleure qualité
+                useCORS: true // Nécessaire si tu as des images ou des styles chargés depuis d'autres domaines (peu probable ici)
+            });
+
+            const imgData = canvas.toDataURL('image/png');
+            const imgWidth = 190; // Largeur de l'image sur le PDF
+            const imgHeight = canvas.height * imgWidth / canvas.width;
+
+            if (y + imgHeight > pageHeight - margin) {
+                doc.addPage();
+                y = margin;
+            }
+            doc.addImage(imgData, 'PNG', margin, y, imgWidth, imgHeight);
+            y += imgHeight + 10;
+        } else {
+            doc.setFontSize(12);
+            doc.text("Aucun classement disponible.", margin + 10, y);
+            y += lineHeight;
+        }
+
+        doc.save("rapport_tournoi_coinche.pdf");
+    }
+
+    // --- Nouvelle fonction pour basculer l'affichage des sections ---
+    function toggleSection(sectionId) {
+      const content = document.getElementById(sectionId);
+      const toggleButton = document.getElementById(sectionId + 'ToggleButton');
+      if (content.classList.contains('hidden')) {
+        content.classList.remove('hidden');
+        toggleButton.textContent = '-'; // Changer le bouton en "moins"
+      } else {
+        content.classList.add('hidden');
+        toggleButton.textContent = '+'; // Changer le bouton en "plus"
+      }
+    }
+
+    // --- Initialisation au chargement de la page ---
+    document.addEventListener('DOMContentLoaded', () => {
+        if (binomes.length > 0) {
+            afficherBinomes();
+            showTab(tourActuel);
+            genererClassement();
+        } else {
+            showTab(1);
+        }
+        // Assurez-vous que les sections sont visibles par défaut au chargement
+        document.querySelectorAll('.section-content').forEach(section => {
+            section.classList.remove('hidden');
+        });
+        document.querySelectorAll('.toggle-button').forEach(button => {
+            button.textContent = '-';
+        });
+    });
+  </script>
+
+</body>
+</html>
